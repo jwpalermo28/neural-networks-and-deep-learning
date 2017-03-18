@@ -42,9 +42,8 @@ Network Architecture:
 '''
 
 # also print the training hyperparamters
-print 'learning rate' + str(eta)
+print 'learning rate: ' + str(eta)
 print 'regularization parameter: ' + str(lmbda)
-print
 print 'mini-batch size: ' + str(mini_batch_size)
 print 'epochs: ' + str(epochs)
 print
