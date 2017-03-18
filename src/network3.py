@@ -32,6 +32,7 @@ versions of Theano.
 
 #### Libraries
 # Standard library
+from datetime import datetime
 import cPickle
 import gzip
 
@@ -103,8 +104,13 @@ class Network(object):
         self.output = self.layers[-1].output
         self.output_dropout = self.layers[-1].output_dropout
 
+    def save_network(self, save_model_as):
+        f = open(save_model_as, "wb")
+        cPickle.dump(self.params, f)
+        f.close()
+
     def SGD(self, training_data, epochs, mini_batch_size, eta,
-            validation_data, test_data, lmbda=0.0):
+            validation_data, test_data, lmbda=0.0, save_model_as=None):
         """Train the network using mini-batch stochastic gradient descent."""
         training_x, training_y = training_data
         validation_x, validation_y = validation_data
@@ -182,6 +188,10 @@ class Network(object):
         print("Best validation accuracy of {0:.2%} obtained at iteration {1}".format(
             best_validation_accuracy, best_iteration))
         print("Corresponding test accuracy of {0:.2%}".format(test_accuracy))
+
+        # save the network
+        if save_model_as:
+            self.save_network(save_model_as)
 
 #### Define layer types
 
