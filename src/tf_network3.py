@@ -1,3 +1,5 @@
+"""This code is a tensorflow clone of the Michael Nielsen's network3.py"""
+
 import numpy as np
 import tensorflow as tf
 
@@ -7,7 +9,7 @@ class Network(object):
         self.layers = layers
         self.mini_batch_size = mini_batch_size
         self.params = [param for layer in self.layers for param in layer.params]
-        self.x = tf.placeholder(tf.float32, [None, layers[0].n_in]) # None since dim can be of any length
+        self.x = tf.placeholder(tf.float32, [None, layers[0].n_in]) # None means any size
         self.y = tf.placeholder(tf.float32, [None, layers[-1].n_out])
         # construct the computation graph up to the network output
         inpt = self.x
@@ -19,7 +21,7 @@ class Network(object):
     def SGD(self, training_data, epochs, mini_batch_size, eta,
             validation_data, test_data, lmbda=0.0):
 
-        # compute number of minibatches per epoch
+        # compute the number of mini-batches per epoch
         num_training_batches = training_data.images.shape[0] // mini_batch_size
         num_validation_batches = validation_data.images.shape[0] // mini_batch_size
         num_test_batches = test_data.images.shape[0] // mini_batch_size
@@ -41,28 +43,23 @@ class Network(object):
                         print("Training mini-batch number " + str(mini_batch_i))
                     batch_xs, batch_ys = training_data.next_batch(mini_batch_size)
                     train_step.run(feed_dict= {self.x: batch_xs, self.y: batch_ys})
-                    # for a quick check that this implementation works
-                    if iteration % 100 == 0:
-                        batch_xs, batch_ys = validation_data.next_batch(mini_batch_size)
-                        print sess.run(accuracy, feed_dict={self.x: batch_xs, self.y: batch_ys})
-            #             validation_accuracy = np.mean(
-            #                 [sess.run(accuracy, feed_dict={self.x: batch_xs, self.y: batch_ys})
-            #                 for batch_xs, batch_ys in [validation_data.next_batch(mini_batch_size) for _ in range(num_validation_batches)])
-            #             print("Epoch " + str(epoch_i) + ": validation accuracy " + str(validation_accuracy))
-            #             if validation_accuracy >= best_validation_accuracy:
-            #                 print("This is the best validation accuracy to date.")
-            #                 best_validation_accuracy = validation_accuracy
-            #                 best_iteration = iteration
-            #                 if test_data:
-            #                     test_accuracy = np.mean(
-            #                         [sess.run(accuracy, feed_dict={self.x: batch_xs, self.y: batch_ys})
-            #                         for batch_xs, batch_ys in test_data.next_batch(mini_batch_size)])
-            #                     print('The corresponding test accuracy is {0:.2%}'.format(
-            #                         test_accuracy))
-            # print("Finished training network.")
-            # print("Best validation accuracy of {0:.2%} obtained at iteration {1}".format(
-            #     best_validation_accuracy, best_iteration))
-            # print("Corresponding test accuracy of {0:.2%}".format(test_accuracy))
+                    if iteration % num_training_batches == 0:
+                        validation_batches = [validation_data.next_batch(mini_batch_size) for _ in range(num_validation_batches)]
+                        validation_accuracy = np.mean([sess.run(accuracy, feed_dict={self.x: batch_xs, self.y: batch_ys}) for (batch_xs, batch_ys) in validation_batches])
+                        print("Epoch " + str(epoch_i) + ": validation accuracy " + str(validation_accuracy))
+                        if validation_accuracy >= best_validation_accuracy:
+                            print("This is the best validation accuracy to date.")
+                            best_validation_accuracy = validation_accuracy
+                            best_iteration = iteration
+                            if test_data:
+                                test_batches = [test_data.next_batch(mini_batch_size) for _ in range(num_test_batches)]
+                                test_accuracy = np.mean([sess.run(accuracy, feed_dict={self.x: batch_xs, self.y: batch_ys}) for batch_xs, batch_ys in test_batches])
+                                print('The corresponding test accuracy is {0:.2%}'.format(
+                                    test_accuracy))
+            print("Finished training network.")
+            print("Best validation accuracy of {0:.2%} obtained at iteration {1}".format(
+                best_validation_accuracy, best_iteration))
+            print("Corresponding test accuracy of {0:.2%}".format(test_accuracy))
 
 
 class FullyConnectedLayer(object):
@@ -75,7 +72,7 @@ class FullyConnectedLayer(object):
         self.b = tf.Variable(tf.random_normal([n_out]))
         self.params = [self.w, self.b]
 
-    # construct the computation graph up to the output
+    # construct the computation graph from the layer input to the layer output
     def set_inpt(self, inpt, mini_batch_size):
         self.inpt = tf.reshape(inpt, (mini_batch_size, self.n_in))
         self.output = self.activation_fn(tf.matmul(self.inpt, self.w) + self.b)
